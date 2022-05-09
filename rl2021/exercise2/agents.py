@@ -56,9 +56,15 @@ class Agent(ABC):
         :return (int): index of selected action
         """
         ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q2")
+        act_vals = [self.q_table[(obs, act)] for act in range(self.n_acts)] 
+        max_val = max(act_vals) 
+        max_acts = [idx for idx, act_val in enumerate(act_vals) if act_val == max_val]
+        
         ### RETURN AN ACTION HERE ###
-        return -1
+        if random.random() < self.epsilon:
+            return random.randint(0, self.n_acts - 1)
+        else:
+            return random.choice(max_acts)
 
     @abstractmethod
     def schedule_hyperparameters(self, timestep: int, max_timestep: int):
@@ -111,7 +117,16 @@ class QLearningAgent(Agent):
         :return (float): updated Q-value for current observation-action pair
         """
         ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q2")
+        act_vals = [self.q_table[(n_obs, act)] for act in range(self.n_acts)] 
+        
+        max_val = max(act_vals) 
+        #max_acts = [idx for idx, act_val in enumerate(act_vals) if act_val == max_val]
+        #max_act = random.choice(max_acts)
+        
+        target_value = reward + self.gamma * (1 - done) * max_val#self.q_table[(n_obs, max_act)]
+        self.q_table[(obs, action)] += self.alpha * (
+            target_value - self.q_table[(obs, action)]
+            )
         return self.q_table[(obs, action)]
 
     def schedule_hyperparameters(self, timestep: int, max_timestep: int):
@@ -126,56 +141,5 @@ class QLearningAgent(Agent):
         :param max_timestep (int): maximum timesteps that the training loop will run for
         """
         ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q2")
-
-
-class MonteCarloAgent(Agent):
-    """Agent using the Monte-Carlo algorithm for training
-    """
-
-    def __init__(self, **kwargs):
-        """Constructor of MonteCarloAgent
-
-        Initializes some variables of the Monte-Carlo agent, namely epsilon,
-        discount rate and an empty observation-action pair dictionary.
-
-        :attr sa_counts (Dict[(Obs, Act), int]): dictionary to count occurrences observation-action pairs
-        """
-        super().__init__(**kwargs)
-        self.sa_counts = {}
-
-    def learn(
-        self, obses: List[np.ndarray], actions: List[int], rewards: List[float]
-    ) -> Dict:
-        """Updates the Q-table based on agent experience
-
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q2**
-
-        :param obses (List(np.ndarray) with numpy arrays of float with dim (observation size)):
-            list of received observations representing environmental states of trajectory (in
-            the order they were encountered)
-        :param actions (List[int]): list of indices of applied actions in trajectory (in the
-            order they were applied)
-        :param rewards (List[float]): list of received rewards during trajectory (in the order
-            they were received)
-        :return (Dict): A dictionary containing the updated Q-value of all the updated state-action pairs
-            indexed by the state action pair.
-        """
-        updated_values = {}
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q2")
-        return updated_values
-
-    def schedule_hyperparameters(self, timestep: int, max_timestep: int):
-        """Updates the hyperparameters
-
-        **YOU MUST IMPLEMENT THIS FUNCTION FOR Q2**
-
-        This function is called before every episode and allows you to schedule your
-        hyperparameters.
-
-        :param timestep (int): current timestep at the beginning of the episode
-        :param max_timestep (int): maximum timesteps that the training loop will run for
-        """
-        ### PUT YOUR CODE HERE ###
-        raise NotImplementedError("Needed for Q2")
+        max_deduct, decay = 0.95, 0.07
+        self.epsilon = 1.0 - (min(1.0, timestep/(decay * max_timestep))) * max_deduct
